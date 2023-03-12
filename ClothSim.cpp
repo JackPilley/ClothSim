@@ -11,6 +11,9 @@
 
 int main(int argc, char* argv[])
 {
+	const int windowWidth = 800;
+	const int windowHeight = 800;
+
 	SDL_Window* window;
 	SDL_GLContext glContext;
 
@@ -33,7 +36,7 @@ int main(int argc, char* argv[])
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	window = SDL_CreateWindow("Cloth Sim", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Cloth Sim", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 	if (!window)
 	{
 		std::cerr << "Error creating window: " << SDL_GetError() << "\n";
@@ -57,7 +60,12 @@ int main(int argc, char* argv[])
 
 	std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
-	glViewport(0, 0, 800, 800);
+	glViewport(0, 0, windowWidth, windowHeight);
+
+	//We're going to use only one vertex array object because the scene is simple enough to just do everything manually
+	GLuint VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
 
 	SDL_Event e;
 	bool quit = false;
@@ -69,6 +77,11 @@ int main(int argc, char* argv[])
 			if (e.type == SDL_QUIT)
 				quit = true;
 		}
+
+		glClearColor(0.0, 0.0, 1.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		SDL_GL_SwapWindow(window);
 	}
 
 	SDL_GL_DeleteContext(glContext);

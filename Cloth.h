@@ -3,6 +3,7 @@
 #include "Particle.h"
 #include "Spring.h"
 #include <vector>
+#include <glad/glad.h>
 
 class Cloth
 {
@@ -14,6 +15,12 @@ class Cloth
 	std::vector<Spring> structuralSprings;
 	std::vector<Spring> shearSprings;
 	std::vector<Spring> flexionSprings;
+
+	std::vector<glm::vec3> vertices;
+	std::vector<glm::vec3> normals;
+	//Vertex buffer object and normal buffer object
+	GLuint vbo;
+	GLuint nbo;
 
 public:
 	Cloth(double width, double height, size_t xRes, size_t yRes, double slack);
