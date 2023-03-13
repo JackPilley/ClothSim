@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 
-Shader::Shader(const std::string& vertPath, const std::string& fragPath)
+Shader::Shader()
 {
 	std::string vertSource, fragSource;
 
@@ -14,8 +14,8 @@ Shader::Shader(const std::string& vertPath, const std::string& fragPath)
 
 	try
 	{
-		vertShaderFile.open(vertPath);
-		fragShaderFile.open(fragPath);
+		vertShaderFile.open("vert.glsl");
+		fragShaderFile.open("frag.glsl");
 
 		std::stringstream vertStream, fragStream;
 
@@ -35,20 +35,20 @@ Shader::Shader(const std::string& vertPath, const std::string& fragPath)
 
 	GLuint vert, frag;
 	GLint success;
-	char infoLog[1024];
+	char infoLog[512];
 
 	// lvalue needed for glShaderSource
 	const char* vertSourceL = vertSource.c_str();
 
 	vert = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vert, 1, &vertSourceL, NULL);
-	glCompileShader(GL_VERTEX_SHADER);
+	glCompileShader(vert);
 
 	glGetShaderiv(vert, GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
 		glGetShaderInfoLog(vert, sizeof(infoLog), NULL, infoLog);
-		std::cerr << "Error compiling vertex shader: " << infoLog << "\n";
+		std::cerr << "Error compiling vertex shader: " << std::string{ infoLog } << "\n";
 	}
 
 	// lvalue needed for glShaderSource
@@ -56,13 +56,13 @@ Shader::Shader(const std::string& vertPath, const std::string& fragPath)
 
 	frag = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(vert, 1, &fragSourceL, NULL);
-	glCompileShader(GL_FRAGMENT_SHADER);
+	glCompileShader(frag);
 
 	glGetShaderiv(frag, GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
 		glGetShaderInfoLog(frag, sizeof(infoLog), NULL, infoLog);
-		std::cerr << "Error compiling fragment shader: " << infoLog << "\n";
+		std::cerr << "Error compiling fragment shader: " << std::string{ infoLog } << "\n";
 	}
 
 	ID = glCreateProgram();
@@ -75,7 +75,7 @@ Shader::Shader(const std::string& vertPath, const std::string& fragPath)
 	if (!success)
 	{
 		glGetProgramInfoLog(ID, sizeof(infoLog), NULL, infoLog);
-		std::cerr << "Error linking shader program: " << infoLog << "\n";
+		std::cerr << "Error linking shader program: " << std::string{ infoLog } << "\n";
 	}
 
 	glDeleteShader(vert);

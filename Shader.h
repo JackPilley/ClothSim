@@ -9,7 +9,7 @@ private:
 	GLuint ID;
 public:
 	//This function can fail, but doesn't provide any status we can check, so look in the console if things are behaving weird
-	Shader(const std::string& vertPath, const std::string& fragPath);
+	Shader();
 	~Shader();
 	void Use();
 };

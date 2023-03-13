@@ -22,6 +22,7 @@ Cloth::Cloth(double width, double height, size_t xRes, size_t yRes, double slack
 			particles.emplace_back(glm::dvec3{ xPos, yPos, 0.0 }, 1, false);
 
 			vertices.emplace_back(xPos, yPos, 0.f);
+			normals.emplace_back(0.f, 0.f, 1.f);
 		}
 	}
 

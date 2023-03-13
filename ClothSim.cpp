@@ -9,6 +9,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Shader.h"
+
 int main(int argc, char* argv[])
 {
 	const int windowWidth = 800;
@@ -66,6 +68,13 @@ int main(int argc, char* argv[])
 	GLuint VAO;
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
+
+	Shader shader{};
+	shader.Use();
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	glEnable(GL_DEPTH_TEST);
 
 	SDL_Event e;
 	bool quit = false;
