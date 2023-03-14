@@ -1,22 +1,23 @@
 #version 330 core
-precision highp float;
 
-in vec3 vPosition;
 in vec3 vNormal;
 
-layout(location = 0) out vec4 FragColor;
+out vec4 FragColor;
 
 uniform mat4 uViewMatrix;
 uniform vec3 uLightDirection;
 
 void main()
 {
-	vec3 lightDir = (uViewMatrix * vec4(uLightDirection, 1.0)).xyz;
-	vec3 normal = vNormal;
+	vec3 lightDir = (uViewMatrix * vec4(uLightDirection, 0.0)).xyz;
+	vec3 normal = normalize(vNormal);
 
-	if(!gl_FrontFacing) normal = -normal;
+	if(gl_FrontFacing == false) normal = -normal;
 
-	normal = normalize(normal);
+	vec3 color = vec3(0.2,0.7,1.0);
+	float diffuseFactor = max(dot(lightDir, normal), 0.0);
 
-	FragColor = vec4(dot(lightDir, normal) * vec3(0.2,0.7,1.0), 1.0);
+	color = diffuseFactor * color;
+
+	FragColor = vec4(color, 1.0);
 }

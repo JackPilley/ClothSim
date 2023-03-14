@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 
 Shader::Shader()
 {
@@ -52,10 +54,10 @@ Shader::Shader()
 	}
 
 	// lvalue needed for glShaderSource
-	const char* fragSourceL = vertSource.c_str();
+	const char* fragSourceL = fragSource.c_str();
 
 	frag = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(vert, 1, &fragSourceL, NULL);
+	glShaderSource(frag, 1, &fragSourceL, NULL);
 	glCompileShader(frag);
 
 	glGetShaderiv(frag, GL_COMPILE_STATUS, &success);
@@ -80,6 +82,14 @@ Shader::Shader()
 
 	glDeleteShader(vert);
 	glDeleteShader(frag);
+
+	glUseProgram(ID);
+
+	mvLoc = glGetUniformLocation(ID, "uModelViewMatrix");
+	normLoc = glGetUniformLocation(ID, "uNormalMatrix");
+	projLoc = glGetUniformLocation(ID, "uProjectionMatrix");
+	viewLoc = glGetUniformLocation(ID, "uViewMatrix");
+	lightLoc = glGetUniformLocation(ID, "uLightDirection");
 }
 
 Shader::~Shader()
@@ -90,4 +100,26 @@ Shader::~Shader()
 void Shader::Use()
 {
 	glUseProgram(ID);
+}
+
+void Shader::SetMVMatrix(const glm::mat4& model, const glm::mat4& view)
+{
+	glm::mat4 mv = view * model;
+
+	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mv));
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+	glm::mat3 norm = glm::inverseTranspose(glm::mat3{mv});
+
+	glUniformMatrix3fv(normLoc, 1, GL_FALSE, glm::value_ptr(norm));
+}
+
+void Shader::SetProjMatrix(const glm::mat4& proj)
+{
+	glUniformMatrix3fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+}
+
+void Shader::SetLightVector(const glm::vec3& light)
+{
+	glUniform3fv(lightLoc, 1, glm::value_ptr(glm::normalize(light)));
 }

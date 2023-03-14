@@ -6,12 +6,13 @@ Cloth::Cloth(double width, double height, size_t xRes, size_t yRes, double slack
 {
 	//We need this to be true, and it can be false if certain preprocessor options are set
 	static_assert(sizeof(glm::vec3) == sizeof(float) * 3);
-
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	
 	vertices.reserve(xResolution * yResolution);
 	particles.reserve(xResolution * yResolution);
+
+	const size_t indexCount = (xResolution - 1) * (yResolution - 1) * 3 * 2;
+
+	indices.reserve(indexCount);
 
 	for (size_t y = 0; y < yResolution; ++y)
 	{
@@ -21,12 +22,43 @@ Cloth::Cloth(double width, double height, size_t xRes, size_t yRes, double slack
 			double yPos = height * static_cast<double>(y) / static_cast<double>(yResolution) - height/2;
 			particles.emplace_back(glm::dvec3{ xPos, yPos, 0.0 }, 1, false);
 
-			vertices.emplace_back(xPos, yPos, 0.f);
-			normals.emplace_back(0.f, 0.f, 1.f);
+			vertices.emplace_back(glm::vec3{static_cast<float>(xPos), static_cast<float>(yPos), 0.f}, glm::vec3{0.f, 0.f, 1.f});
 		}
 	}
 
-	glBufferData(GL_ARRAY_BUFFER, vertices.size(), &vertices.front(), GL_DYNAMIC_DRAW);
+	size_t curX = 0;
+	size_t curY = 0;
+
+	for (size_t i = 0; i < indexCount / 6; i++)
+	{
+		indices.push_back(curX + curY * xRes);
+		indices.push_back(curX + (curY + 1) * xRes);
+		indices.push_back(curX + (curY + 1) * xRes + 1);
+
+		indices.push_back(curX + curY * xRes);
+		indices.push_back(curX + curY * xRes + 1);
+		indices.push_back(curX + (curY + 1) * xRes + 1);
+
+		if (curX == xResolution - 2)
+		{
+			curX = 0;
+			curY += 1;
+		}
+		else
+		{
+			curX += 1;
+		}
+	}
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(Vertex), &vertices.front(), GL_DYNAMIC_DRAW);
+
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_STATIC_DRAW);
 }
 
 void Cloth::Step(double dt)

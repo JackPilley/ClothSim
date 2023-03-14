@@ -75,6 +75,7 @@ int main(int argc, char* argv[])
 	glEnableVertexAttribArray(1);
 
 	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 
 	SDL_Event e;
 	bool quit = false;
