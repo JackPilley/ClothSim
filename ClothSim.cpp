@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Shader.h"
+#include "Cloth.h"
 
 int main(int argc, char* argv[])
 {
@@ -62,20 +63,17 @@ int main(int argc, char* argv[])
 
 	std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
-	glViewport(0, 0, windowWidth, windowHeight);
-
-	//We're going to use only one vertex array object because the scene is simple enough to just do everything manually
-	GLuint VAO;
+	unsigned int VAO;
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
+	glViewport(0, 0, windowWidth, windowHeight);
+
+	Cloth cloth(1.0, 1.0, 10, 10, 1);
+
 	Shader shader{};
 	shader.Use();
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+	
 
 	SDL_Event e;
 	bool quit = false;
@@ -91,6 +89,9 @@ int main(int argc, char* argv[])
 		glClearColor(0.0, 0.0, 1.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		shader.Use();
+
+		cloth.Draw();
 		SDL_GL_SwapWindow(window);
 	}
 

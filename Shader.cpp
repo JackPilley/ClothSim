@@ -85,6 +85,8 @@ Shader::Shader()
 
 	glUseProgram(ID);
 
+	glEnableVertexAttribArray(0);
+
 	mvLoc = glGetUniformLocation(ID, "uModelViewMatrix");
 	normLoc = glGetUniformLocation(ID, "uNormalMatrix");
 	projLoc = glGetUniformLocation(ID, "uProjectionMatrix");
@@ -106,20 +108,20 @@ void Shader::SetMVMatrix(const glm::mat4& model, const glm::mat4& view)
 {
 	glm::mat4 mv = view * model;
 
-	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mv));
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	//glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mv));
+	//glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat3 norm = glm::inverseTranspose(glm::mat3{mv});
 
-	glUniformMatrix3fv(normLoc, 1, GL_FALSE, glm::value_ptr(norm));
+	//glUniformMatrix3fv(normLoc, 1, GL_FALSE, glm::value_ptr(norm));
 }
 
 void Shader::SetProjMatrix(const glm::mat4& proj)
 {
-	glUniformMatrix3fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+	//glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
 void Shader::SetLightVector(const glm::vec3& light)
 {
-	glUniform3fv(lightLoc, 1, glm::value_ptr(glm::normalize(light)));
+	//glUniform3fv(lightLoc, 1, glm::value_ptr(glm::normalize(light)));
 }

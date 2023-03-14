@@ -24,6 +24,7 @@ class Cloth
 	GLuint ebo;
 
 public:
+	Cloth() = delete;
 	Cloth(double width, double height, size_t xRes, size_t yRes, double slack);
 	void Step(double dt);
 	void SetParticlePosition(size_t x, size_t y, glm::dvec3 position);

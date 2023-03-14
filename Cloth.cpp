@@ -1,4 +1,5 @@
 #include "Cloth.h"
+#include <iostream>
 
 Cloth::Cloth(double width, double height, size_t xRes, size_t yRes, double slack):
 	xResolution(xRes),
@@ -18,8 +19,8 @@ Cloth::Cloth(double width, double height, size_t xRes, size_t yRes, double slack
 	{
 		for (size_t x = 0; x < xResolution; ++x)
 		{
-			double xPos = width * static_cast<double>(x) / static_cast<double>(xResolution) - width/2;
-			double yPos = height * static_cast<double>(y) / static_cast<double>(yResolution) - height/2;
+			double xPos = width * static_cast<double>(x + 0.5) / static_cast<double>(xResolution) - width/2;
+			double yPos = height * static_cast<double>(y + 0.5) / static_cast<double>(yResolution) - height/2;
 			particles.emplace_back(glm::dvec3{ xPos, yPos, 0.0 }, 1, false);
 
 			vertices.emplace_back(glm::vec3{static_cast<float>(xPos), static_cast<float>(yPos), 0.f}, glm::vec3{0.f, 0.f, 1.f});
@@ -78,5 +79,10 @@ void Cloth::SetParticleFixed(size_t x, size_t y, bool fixed)
 
 void Cloth::Draw()
 {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glDrawElements(GL_LINE_STRIP, indices.size(), GL_UNSIGNED_INT, 0);
 }
