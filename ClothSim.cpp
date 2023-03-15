@@ -68,12 +68,21 @@ int main(int argc, char* argv[])
 	glBindVertexArray(VAO);
 
 	glViewport(0, 0, windowWidth, windowHeight);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 
-	Cloth cloth(1.0, 1.0, 10, 10, 1);
+	Cloth cloth(5.0, 5.0, 50, 50, 1);
 
 	Shader shader{};
 	shader.Use();
 	
+	shader.SetProjMatrix(glm::perspective(80.f, 1.f, 0.1f, 100.f));
+	shader.SetLightVector(glm::vec3(-1, -1, -1));
+	glm::mat4 transform{ 1.f };
+	transform = glm::translate(transform, glm::vec3{ 0.f, 0.f, -3 });
+	//transform = glm::rotate(transform, glm::pi<float>() / 1, glm::vec3{ 0,1,0 });
+	shader.SetMVMatrix(transform, glm::mat4{ 1.f });
+
 
 	SDL_Event e;
 	bool quit = false;
@@ -86,8 +95,8 @@ int main(int argc, char* argv[])
 				quit = true;
 		}
 
-		glClearColor(0.0, 0.0, 1.0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.Use();
 

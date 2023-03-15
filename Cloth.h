@@ -22,6 +22,8 @@ class Cloth
 	//Vertex buffer object
 	GLuint vbo;
 	GLuint ebo;
+	
+	void UpdateGeometry();
 
 public:
 	Cloth() = delete;
