@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #include <glad/glad.h>
 
@@ -59,8 +60,6 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	SDL_GL_SetSwapInterval(1);
-
 	std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
 	unsigned int VAO;
@@ -71,7 +70,7 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	Cloth cloth(5.0, 5.0, 50, 50, 1);
+	Cloth cloth(5.0, 5.0, 300, 300, 1);
 
 	Shader shader{};
 	shader.Use();
@@ -83,12 +82,16 @@ int main(int argc, char* argv[])
 	//transform = glm::rotate(transform, glm::pi<float>() / 1, glm::vec3{ 0,1,0 });
 	shader.SetMVMatrix(transform, glm::mat4{ 1.f });
 
+	SDL_GL_SetSwapInterval(1);
+
+	using namespace std::chrono;
 
 	SDL_Event e;
 	bool quit = false;
-
+	double time = 0.0;
 	while (!quit)
 	{
+		high_resolution_clock::time_point start = high_resolution_clock::now();
 		while (SDL_PollEvent(&e) != 0)
 		{
 			if (e.type == SDL_QUIT)
@@ -100,8 +103,17 @@ int main(int argc, char* argv[])
 
 		shader.Use();
 
+		cloth.Step(time);
 		cloth.Draw();
+
+		high_resolution_clock::time_point end = high_resolution_clock::now();
+
 		SDL_GL_SwapWindow(window);
+		
+		duration<double> timeSpan = duration_cast<duration<double>>(end - start);
+		std::cout << timeSpan.count() * 1000 << "\n";
+
+		time += 0.02;
 	}
 
 	SDL_GL_DeleteContext(glContext);

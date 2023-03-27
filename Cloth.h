@@ -8,8 +8,8 @@
 
 class Cloth
 {
-	size_t xResolution;
-	size_t yResolution;
+	GLuint xResolution;
+	GLuint yResolution;
 
 	std::vector<Particle> particles;
 
@@ -22,12 +22,17 @@ class Cloth
 	//Vertex buffer object
 	GLuint vbo;
 	GLuint ebo;
+
+	//Indices used for parallel normal calculation
+	std::vector<size_t> faceParRange;
+	//Intermediate storage for normal generation
+	std::vector<glm::vec3> normsIntermediate;
 	
 	void UpdateGeometry();
 
 public:
 	Cloth() = delete;
-	Cloth(double width, double height, size_t xRes, size_t yRes, double slack);
+	Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack);
 	void Step(double dt);
 	void SetParticlePosition(size_t x, size_t y, glm::dvec3 position);
 	void SetParticleFixed(size_t x, size_t y, bool fixed);
