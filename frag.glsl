@@ -1,6 +1,7 @@
 #version 330 core
 
 in vec3 vNormal;
+in vec3 vPosition;
 
 out vec4 FragColor;
 
@@ -11,6 +12,7 @@ void main()
 {
 	vec3 lightDir = -(uViewMatrix * vec4(uLightDirection, 0.0)).xyz;
 	vec3 normal = normalize(vNormal);
+	//vec3 normal = normalize(cross(dFdx(vPosition), dFdy(vPosition)));
 
 	vec3 baseColor = vec3(0.3,0.8,1.0);
 

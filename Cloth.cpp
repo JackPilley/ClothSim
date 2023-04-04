@@ -77,7 +77,7 @@ void Cloth::UpdateGeometry()
 {
 	size_t i = 0;
 	//Update positions
-	for(auto& particle: particles)
+	for (auto& particle : particles)
 	{
 		vertices[i++].pos = glm::vec3{ particle.position };
 	}
@@ -126,15 +126,25 @@ void Cloth::UpdateGeometry()
 		i += 3;
 	}
 
+	for (i = 0; i < vertices.size(); i++)
+	{
+		particles[i].normal = vertices[i].norm;
+	}
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), &vertices.front());
 }
 
 void Cloth::Step(double dt)
 {
+	for (auto& spring : springs)
+	{
+		spring.CalcTension();
+	}
+
 	for (auto& particle : particles)
 	{
-		particle.position.z = cos(particle.position.x * 4.0 + dt)/4.0;
+		particle.Move(dt);
 	}
 }
 

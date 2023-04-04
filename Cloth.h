@@ -13,9 +13,7 @@ class Cloth
 
 	std::vector<Particle> particles;
 
-	std::vector<Spring> structuralSprings;
-	std::vector<Spring> shearSprings;
-	std::vector<Spring> flexionSprings;
+	std::vector<Spring> springs;
 
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;

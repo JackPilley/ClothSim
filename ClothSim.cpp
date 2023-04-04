@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	Cloth cloth(5.0, 5.0, 300, 300, 1);
+	Cloth cloth(5.0, 5.0, 50, 50, 1);
 
 	Shader shader{};
 	shader.Use();
