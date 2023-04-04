@@ -5,6 +5,15 @@
 
 struct Spring
 {
+	Spring(Particle& A, Particle& B, double restLength, double stiffness, double damping):
+		A(A),
+		B(B),
+		restLength(restLength),
+		stiffness(stiffness),
+		damping(damping),
+		force(0)
+	{}
+
 	Particle& A;
 	Particle& B;
 
@@ -23,5 +32,11 @@ struct Spring
 
 		//calculate spring damper force
 		force += -damping * glm::dot(A.velocity - B.velocity, dir) * dir;
+	}
+
+	void ApplyForce()
+	{
+		A.force += force;
+		B.force += -force;
 	}
 };

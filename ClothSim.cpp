@@ -70,7 +70,27 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	Cloth cloth(5.0, 5.0, 50, 50, 1);
+	Cloth cloth(5.0, 5.0, 20, 20, 1);
+	cloth.SetParticleFixed(0, 0, true);
+	cloth.SetParticleFixed(1, 0, true);
+	cloth.SetParticleFixed(2, 0, true);
+	cloth.SetParticleFixed(3, 0, true);
+	cloth.SetParticleFixed(4, 0, true);
+	cloth.SetParticleFixed(5, 0, true);
+	cloth.SetParticleFixed(6, 0, true);
+	cloth.SetParticleFixed(7, 0, true);
+	cloth.SetParticleFixed(8, 0, true);
+	cloth.SetParticleFixed(9, 0, true);
+	cloth.SetParticleFixed(10, 0, true);
+	cloth.SetParticleFixed(11, 0, true);
+	cloth.SetParticleFixed(12, 0, true);
+	cloth.SetParticleFixed(13, 0, true);
+	cloth.SetParticleFixed(14, 0, true);
+	cloth.SetParticleFixed(15, 0, true);
+	cloth.SetParticleFixed(16, 0, true);
+	cloth.SetParticleFixed(17, 0, true);
+	cloth.SetParticleFixed(18, 0, true);
+	cloth.SetParticleFixed(19, 0, true);
 
 	Shader shader{};
 	shader.Use();
@@ -88,7 +108,7 @@ int main(int argc, char* argv[])
 
 	SDL_Event e;
 	bool quit = false;
-	double time = 0.0;
+	double time = 0.016;
 	while (!quit)
 	{
 		high_resolution_clock::time_point start = high_resolution_clock::now();
@@ -112,8 +132,6 @@ int main(int argc, char* argv[])
 		
 		duration<double> timeSpan = duration_cast<duration<double>>(end - start);
 		std::cout << timeSpan.count() * 1000 << "\n";
-
-		time += 0.02;
 	}
 
 	SDL_GL_DeleteContext(glContext);

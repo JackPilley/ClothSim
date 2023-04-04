@@ -25,5 +25,6 @@ void main()
 	vec3 color = baseColor * max(dot(normal, lightDir), 0.0);
 	color = color + baseColor * 0.1;
 
-	FragColor = vec4(color ,1.0);
+	//FragColor = vec4(color ,1.0);
+	FragColor = vec4(1.0);
 }

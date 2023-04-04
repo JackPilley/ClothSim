@@ -26,7 +26,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		{
 			double xPos = width * static_cast<double>(x + 0.5) / static_cast<double>(xResolution) - width/2;
 			double yPos = height * static_cast<double>(y + 0.5) / static_cast<double>(yResolution) - height/2;
-			particles.emplace_back(glm::dvec3{ xPos, yPos, cos(xPos * 4)/4 }, 1, false);
+			particles.emplace_back(glm::dvec3{ xPos, yPos, 0.0 }, 1, false);
 
 			vertices.emplace_back(glm::vec3{0.f}, glm::vec3{0.f, 0.f, 1.f});
 		}
@@ -71,6 +71,17 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_STATIC_DRAW);
+
+	//Create structural springs
+	double structuralStiffness = 100.0;
+	for (size_t y = 0; y < yResolution-1; ++y)
+	{
+		for (size_t x = 0; x < xResolution-1; ++x)
+		{
+			springs.emplace_back(particles[x + y * xResolution], particles[x + 1 + y * xResolution], width / (xResolution), structuralStiffness, 0.1);
+			springs.emplace_back(particles[x + y * xResolution], particles[x + (y + 1) * xResolution], height / (yResolution), structuralStiffness, 0.1);
+		}
+	}
 }
 
 void Cloth::UpdateGeometry()
@@ -142,6 +153,16 @@ void Cloth::Step(double dt)
 		spring.CalcTension();
 	}
 
+	for (auto& spring : springs)
+	{
+		spring.ApplyForce();
+	}
+
+	for (auto& particle : particles)
+	{
+		particle.force += glm::dvec3(0, 9.8, 0) * particle.mass;
+	}
+
 	for (auto& particle : particles)
 	{
 		particle.Move(dt);
@@ -150,12 +171,16 @@ void Cloth::Step(double dt)
 
 void Cloth::SetParticlePosition(size_t x, size_t y, glm::dvec3 position)
 {
-
+	particles[x + y * xResolution].position = position;
 }
 
 void Cloth::SetParticleFixed(size_t x, size_t y, bool fixed)
 {
-
+	particles[x + y * xResolution].fixed = fixed;
+	if (fixed)
+	{
+		particles[x + y * xResolution].velocity = glm::dvec3{ 0 };
+	}
 }
 
 void Cloth::Draw()
@@ -167,5 +192,5 @@ void Cloth::Draw()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_POINTS, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 }
