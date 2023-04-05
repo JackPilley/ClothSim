@@ -39,6 +39,7 @@ int main(int argc, char* argv[])
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	
 
 	window = SDL_CreateWindow("Cloth Sim", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 	if (!window)
@@ -60,6 +61,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	SDL_GL_SetSwapInterval(0);
+
 	std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
 	unsigned int VAO;
@@ -71,38 +74,22 @@ int main(int argc, char* argv[])
 	glDisable(GL_CULL_FACE);
 
 	Cloth cloth(5.0, 5.0, 20, 20, 1);
-	cloth.SetParticleFixed(0, 0, true);
-	cloth.SetParticleFixed(1, 0, true);
-	cloth.SetParticleFixed(2, 0, true);
-	cloth.SetParticleFixed(3, 0, true);
-	cloth.SetParticleFixed(4, 0, true);
-	cloth.SetParticleFixed(5, 0, true);
-	cloth.SetParticleFixed(6, 0, true);
-	cloth.SetParticleFixed(7, 0, true);
-	cloth.SetParticleFixed(8, 0, true);
-	cloth.SetParticleFixed(9, 0, true);
-	cloth.SetParticleFixed(10, 0, true);
-	cloth.SetParticleFixed(11, 0, true);
-	cloth.SetParticleFixed(12, 0, true);
-	cloth.SetParticleFixed(13, 0, true);
-	cloth.SetParticleFixed(14, 0, true);
-	cloth.SetParticleFixed(15, 0, true);
-	cloth.SetParticleFixed(16, 0, true);
-	cloth.SetParticleFixed(17, 0, true);
-	cloth.SetParticleFixed(18, 0, true);
-	cloth.SetParticleFixed(19, 0, true);
+	for (int i = 0; i < 20; i++)
+	{
+		cloth.SetParticleFixed(i, 19, true);
+	}
 
 	Shader shader{};
 	shader.Use();
 	
-	shader.SetProjMatrix(glm::perspective(80.f, 1.f, 0.1f, 100.f));
+	shader.SetProjMatrix(glm::perspective(glm::radians(80.f), 1.f, 0.1f, 100.f));
 	shader.SetLightVector(glm::vec3(-1, -1, -1));
 	glm::mat4 transform{ 1.f };
-	transform = glm::translate(transform, glm::vec3{ 0.f, 0.f, -3 });
+	transform = glm::translate(transform, glm::vec3{ 0.f, 2.f, -2.f });
+	glm::mat4 view{ 1.f };
+	view = glm::lookAt(glm::vec3{ 0,0,1 }, glm::vec3{ 0,0,0 }, glm::vec3{0,1,0});
 	//transform = glm::rotate(transform, glm::pi<float>() / 1, glm::vec3{ 0,1,0 });
-	shader.SetMVMatrix(transform, glm::mat4{ 1.f });
-
-	SDL_GL_SetSwapInterval(1);
+	shader.SetMVMatrix(transform, view);
 
 	using namespace std::chrono;
 
@@ -129,7 +116,7 @@ int main(int argc, char* argv[])
 		high_resolution_clock::time_point end = high_resolution_clock::now();
 
 		SDL_GL_SwapWindow(window);
-		
+
 		duration<double> timeSpan = duration_cast<duration<double>>(end - start);
 		std::cout << timeSpan.count() * 1000 << "\n";
 	}
