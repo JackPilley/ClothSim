@@ -26,7 +26,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		{
 			double xPos = width * static_cast<double>(x + 0.5) / static_cast<double>(xResolution) - width/2;
 			double yPos = height * static_cast<double>(y + 0.5) / static_cast<double>(yResolution) - height/2;
-			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 0.05, false);
+			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 0.03, false);
 
 			vertices.emplace_back(glm::vec3{0.f}, glm::vec3{0.f, 0.f, 1.f});
 		}
@@ -72,13 +72,26 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_STATIC_DRAW);
 
-	//Create horizontal structural springs
 	double structuralStiffness = 100.0;
+	double shearStiffness = 50;
+	double flexionStiffness = 20.0;
+
+	springs.reserve(
+		(xResolution - 1) * yResolution +
+		(yResolution - 1) * xResolution +
+		(xResolution - 1) * (yResolution - 1) +
+		(xResolution - 1) * (yResolution - 1) +
+		(xResolution - 2) * yResolution +
+		(yResolution - 2) * xResolution
+	);
+
+	//Create horizontal structural springs
 	for (size_t y = 0; y < yResolution; ++y)
 	{
 		for (size_t x = 0; x < xResolution-1; ++x)
 		{
 			springs.emplace_back(particles[x + y * xResolution], particles[x + 1 + y * xResolution], width / (xResolution), structuralStiffness);
+			structuralSprings.push_back(&springs[springs.size() - 1]);
 		}
 	}
 	// Create vertical structural springs
@@ -87,11 +100,11 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		for (size_t y = 0; y < yResolution - 1; ++y)
 		{
 			springs.emplace_back(particles[x + y * xResolution], particles[x + (y + 1) * xResolution], height / (yResolution), structuralStiffness);
+			structuralSprings.push_back(&springs[springs.size() - 1]);
 		}
 	}
 	//Create UL->DR shear springs
 	double shearRestLength = glm::distance(particles[0].position, particles[1 + xResolution].position);
-	double shearStiffness = 50;
 	for (size_t y = 0; y < yResolution - 1; y++)
 	{
 		for (size_t x = 0; x < xResolution - 1; x++)
@@ -109,7 +122,6 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 	}
 	//Create horizontal flexion springs
 	double flexionLength = width / (xResolution) * 2;
-	double flexionStiffness = 50.0;
 	for (size_t y = 0;  y < yResolution; y++)
 	{
 		for (size_t x = 0; x < xResolution - 2; x++)
@@ -201,15 +213,17 @@ void Cloth::Step(double dt)
 		spring.ApplyForce();
 	}
 
+	glm::dvec3 wind{ 0.1, 0.0, 0.3 };
+	glm::dvec3 windDir = glm::normalize(wind);
 	// World forces (gravity, wind, air resistance)
 	for (auto& particle : particles)
 	{
 		//Gravity
 		particle.force += glm::dvec3(0, -9.8, 0) * particle.mass;
 		//Drag
-		particle.force += -0.1 * particle.velocity;
+		particle.force += -0.1 * (particle.velocity);
 		//Wind
-		particle.force += glm::dot(glm::dvec3{0.1, 0.0, 0.1}, particle.normal);
+		//particle.force += glm::dot(windDir, particle.normal) * wind;
 		
 		//Brownian Motion (I just made this RNG up, seems to work well enough)
 		double seed = particle.position.x + particle.position.y * particle.position.y * particle.position.y * particle.position.y * particle.position.y + particle.position.z * particle.position.z * particle.position.z;
@@ -223,6 +237,11 @@ void Cloth::Step(double dt)
 	for (auto& particle : particles)
 	{
 		particle.Move(dt);
+	}
+
+	for (Spring* spring : structuralSprings)
+	{
+		spring->ResolveSuperElasticity();
 	}
 }
 
