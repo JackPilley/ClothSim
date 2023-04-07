@@ -31,6 +31,6 @@ struct Particle
 		previousPosition = position;
 
 		position = position * 2.0 - previousPosition + (force / mass) * (dt * dt);
-		velocity = (position - previousPosition) / dt;
+		velocity = (position - previousPosition) / (2*dt);
 	}
 };
