@@ -10,7 +10,8 @@ struct Spring
 		B(B),
 		restLength(restLength),
 		stiffness(stiffness),
-		force(0)
+		force(0),
+		deformationRate(0)
 	{}
 
 	Particle& A;
@@ -21,6 +22,8 @@ struct Spring
 
 	glm::dvec3 force;
 
+	double deformationRate;
+
 	void CalcTension()
 	{
 		glm::dvec3 dir = glm::normalize(A.position - B.position);
@@ -29,42 +32,39 @@ struct Spring
 		force = stiffness * (restLength - glm::length(A.position - B.position)) * dir;
 	}
 
+	void CalcDeformationRate()
+	{
+		deformationRate = (glm::distance(A.position, B.position) - restLength) / restLength;
+	}
+
 	void ApplyForce()
 	{
 		A.force += force;
 		B.force += -force;
 	}
 
-	double GetDeformationRate()
+	void ResolveSuperElongation()
 	{
-		double length = glm::distance(A.position, B.position);
-		return (length - restLength) / restLength;
-	}
+		[[likely]] if (deformationRate < 0.1) return;
+		[[unlikely]] if (A.fixed && B.fixed) return;
 
-	void ResolveSuperElasticity()
-	{
-		if (A.fixed && B.fixed) return;
-
-		double deformationRate = GetDeformationRate();
-
-		if (deformationRate > 0.0)
+		if (A.fixed || B.fixed)
 		{
-			if (A.fixed || B.fixed)
-			{
-				Particle& fixed = A.fixed ? A : B;
-				Particle& unfixed = A.fixed ? B : A;
+			Particle& fixed = A.fixed ? A : B;
+			Particle& unfixed = A.fixed ? B : A;
 
-				glm::dvec3 dir = glm::normalize(unfixed.position - fixed.position);
-				unfixed.position = fixed.position + dir * restLength;
-			}
-			else
-			{
-				glm::dvec3 dir = glm::normalize(A.position - B.position);
-				glm::dvec3 mid = (A.position + B.position) / 2.0;
-				A.position = mid + dir * restLength / 2.0;
-				B.position = mid - dir * restLength / 2.0;
-
-			}
+			glm::dvec3 dir = glm::normalize(unfixed.position - fixed.position);
+			unfixed.position = fixed.position + dir * (restLength * 1.1);
+		}
+		else
+		{
+			glm::dvec3 midpoint = (A.position + B.position) / 2.0;
+			glm::dvec3 toA = glm::normalize(A.position - midpoint);
+			glm::dvec3 toB = glm::normalize(B.position - midpoint);
+			A.position = midpoint + toA * (restLength * 1.1/2.0);
+			B.position = midpoint + toB * (restLength * 1.1/2.0);
+			//A.position = midpoint - dir * (restLength * 1.1) / 2.0;
+			//B.position = midpoint + dir * (restLength * 1.1) / 2.0;
 		}
 	}
 };

@@ -73,13 +73,13 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	Cloth cloth(5.0, 5.0, 30, 30, 1);
-	/*for (int i = 0; i < 30; i++)
-	{
-		cloth.SetParticleFixed(i, 29, true);
-	}*/
-	cloth.SetParticleFixed(0, 29, true);
-	cloth.SetParticleFixed(29, 29, true);
+	Cloth cloth(5.0, 5.0, 8, 8, 1);
+	//for (int i = 0; i < 17; i++)
+	//{
+	//	cloth.SetParticleFixed(0, i, true);
+	//}
+	cloth.SetParticleFixed(0, 7, true);
+	cloth.SetParticleFixed(7, 7, true);
 
 	Shader shader{};
 	shader.Use();
@@ -87,9 +87,9 @@ int main(int argc, char* argv[])
 	shader.SetProjMatrix(glm::perspective(glm::radians(80.f), 1.f, 0.1f, 100.f));
 	shader.SetLightVector(glm::vec3(-1, -1, -1));
 	glm::mat4 transform{ 1.f };
-	transform = glm::translate(transform, glm::vec3{ 0.f, 1.f, -1.f });
+	transform = glm::translate(transform, glm::vec3{ 0.f, 0.f, -1.f });
 	glm::mat4 view{ 1.f };
-	view = glm::lookAt(glm::vec3{ 0,0,1 }, glm::vec3{ 0,0,0 }, glm::vec3{0,1,0});
+	view = glm::lookAt(glm::vec3{ 0,0.5,1 }, glm::vec3{ 0,0,-1.f }, glm::vec3{0,1,0});
 	//transform = glm::rotate(transform, glm::pi<float>() / 1, glm::vec3{ 0,1,0 });
 	shader.SetMVMatrix(transform, view);
 
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 
 	SDL_Event e;
 	bool quit = false;
-	double time = 0.0016;
+	double time = 0.016;
 	while (!quit)
 	{
 		high_resolution_clock::time_point start = high_resolution_clock::now();
@@ -112,8 +112,7 @@ int main(int argc, char* argv[])
 
 		shader.Use();
 
-		for (int i = 0; i < 20; i++)
-			cloth.Step(time);
+		cloth.Step(time);
 		cloth.Draw();
 
 		high_resolution_clock::time_point end = high_resolution_clock::now();
@@ -121,7 +120,7 @@ int main(int argc, char* argv[])
 		SDL_GL_SwapWindow(window);
 
 		duration<double> timeSpan = duration_cast<duration<double>>(end - start);
-		std::cout << timeSpan.count() * 1000 << "\n";
+		//std::cout << timeSpan.count() * 1000 << "\n";
 	}
 
 	SDL_GL_DeleteContext(glContext);

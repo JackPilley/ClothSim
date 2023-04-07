@@ -26,7 +26,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		{
 			double xPos = width * static_cast<double>(x + 0.5) / static_cast<double>(xResolution) - width/2;
 			double yPos = height * static_cast<double>(y + 0.5) / static_cast<double>(yResolution) - height/2;
-			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 0.03, false);
+			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 0.1, false);
 
 			vertices.emplace_back(glm::vec3{0.f}, glm::vec3{0.f, 0.f, 1.f});
 		}
@@ -72,26 +72,16 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_STATIC_DRAW);
 
-	double structuralStiffness = 100.0;
-	double shearStiffness = 50;
+	double structuralStiffness = 50.0;
+	double shearStiffness = 20.0;
 	double flexionStiffness = 20.0;
-
-	springs.reserve(
-		(xResolution - 1) * yResolution +
-		(yResolution - 1) * xResolution +
-		(xResolution - 1) * (yResolution - 1) +
-		(xResolution - 1) * (yResolution - 1) +
-		(xResolution - 2) * yResolution +
-		(yResolution - 2) * xResolution
-	);
 
 	//Create horizontal structural springs
 	for (size_t y = 0; y < yResolution; ++y)
 	{
 		for (size_t x = 0; x < xResolution-1; ++x)
 		{
-			springs.emplace_back(particles[x + y * xResolution], particles[x + 1 + y * xResolution], width / (xResolution), structuralStiffness);
-			structuralSprings.push_back(&springs[springs.size() - 1]);
+			structuralSprings.emplace_back(particles[x + y * xResolution], particles[x + 1 + y * xResolution], width / (xResolution), structuralStiffness);
 		}
 	}
 	// Create vertical structural springs
@@ -99,8 +89,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 	{
 		for (size_t y = 0; y < yResolution - 1; ++y)
 		{
-			springs.emplace_back(particles[x + y * xResolution], particles[x + (y + 1) * xResolution], height / (yResolution), structuralStiffness);
-			structuralSprings.push_back(&springs[springs.size() - 1]);
+			structuralSprings.emplace_back(particles[x + y * xResolution], particles[x + (y + 1) * xResolution], height / (yResolution), structuralStiffness);
 		}
 	}
 	//Create UL->DR shear springs
@@ -109,7 +98,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 	{
 		for (size_t x = 0; x < xResolution - 1; x++)
 		{
-			springs.emplace_back(particles[x + y * xResolution], particles[x + 1 + (y + 1) * xResolution], shearRestLength, shearStiffness);
+			shearSprings.emplace_back(particles[x + y * xResolution], particles[x + 1 + (y + 1) * xResolution], shearRestLength, shearStiffness);
 		}
 	}
 	//Create DL->UR shear springs
@@ -117,7 +106,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 	{
 		for (size_t x = 0; x < xResolution - 1; x++)
 		{
-			springs.emplace_back(particles[x + y * xResolution], particles[x + 1 + (y - 1) * xResolution], shearRestLength, shearStiffness);
+			shearSprings.emplace_back(particles[x + y * xResolution], particles[x + 1 + (y - 1) * xResolution], shearRestLength, shearStiffness);
 		}
 	}
 	//Create horizontal flexion springs
@@ -126,7 +115,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 	{
 		for (size_t x = 0; x < xResolution - 2; x++)
 		{
-			springs.emplace_back(particles[x + y * xResolution], particles[x + 2 + y * xResolution], flexionLength, flexionStiffness);
+			flexionSprings.emplace_back(particles[x + y * xResolution], particles[x + 2 + y * xResolution], flexionLength, flexionStiffness);
 		}
 	}
 	flexionLength = height / (yResolution) * 2;
@@ -134,8 +123,23 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 	{
 		for (size_t y = 0; y < yResolution - 2; y++)
 		{
-			springs.emplace_back(particles[x + y * xResolution], particles[x + (y + 2) * xResolution], flexionLength, flexionStiffness);
+			flexionSprings.emplace_back(particles[x + y * xResolution], particles[x + (y + 2) * xResolution], flexionLength, flexionStiffness);
 		}
+	}
+
+	for (auto& spring : structuralSprings)
+	{
+		springs.push_back(&spring);
+	}
+
+	for (auto& spring : shearSprings)
+	{
+		springs.push_back(&spring);
+	}
+
+	for (auto& spring : flexionSprings)
+	{
+		springs.push_back(&spring);
 	}
 }
 
@@ -205,25 +209,25 @@ void Cloth::Step(double dt)
 {
 	for (auto& spring : springs)
 	{
-		spring.CalcTension();
+		spring->CalcTension();
 	}
 
 	for (auto& spring : springs)
 	{
-		spring.ApplyForce();
+		spring->ApplyForce();
 	}
 
-	glm::dvec3 wind{ 0.1, 0.0, 0.3 };
-	glm::dvec3 windDir = glm::normalize(wind);
+	glm::dvec3 wind{ 0.0, 0.0, 0.0 };
+
 	// World forces (gravity, wind, air resistance)
 	for (auto& particle : particles)
 	{
 		//Gravity
 		particle.force += glm::dvec3(0, -9.8, 0) * particle.mass;
 		//Drag
-		particle.force += -0.1 * (particle.velocity);
+		particle.force += -0.1 * particle.velocity;
 		//Wind
-		//particle.force += glm::dot(windDir, particle.normal) * wind;
+		particle.force += glm::dot(particle.normal, (wind - particle.velocity)) * particle.normal;
 		
 		//Brownian Motion (I just made this RNG up, seems to work well enough)
 		double seed = particle.position.x + particle.position.y * particle.position.y * particle.position.y * particle.position.y * particle.position.y + particle.position.z * particle.position.z * particle.position.z;
@@ -239,10 +243,26 @@ void Cloth::Step(double dt)
 		particle.Move(dt);
 	}
 
-	for (Spring* spring : structuralSprings)
+	for (auto& spring : structuralSprings)
 	{
-		spring->ResolveSuperElasticity();
+		spring.CalcDeformationRate();
 	}
+
+	for (auto& spring : shearSprings)
+	{
+		spring.CalcDeformationRate();
+	}
+
+	for (auto& spring : structuralSprings)
+	{
+		spring.ResolveSuperElongation();
+	}
+
+	for (auto& spring : shearSprings)
+	{
+		spring.ResolveSuperElongation();
+	}
+
 }
 
 void Cloth::SetParticlePosition(size_t x, size_t y, glm::dvec3 position)
@@ -268,5 +288,5 @@ void Cloth::Draw()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_POINTS, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 }
