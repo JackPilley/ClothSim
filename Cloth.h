@@ -13,7 +13,6 @@ class Cloth
 
 	std::vector<Particle> particles;
 
-	std::vector<Spring*> springs;
 	std::vector<Spring> structuralSprings;
 	std::vector<Spring> shearSprings;
 	std::vector<Spring> flexionSprings;
@@ -30,6 +29,11 @@ class Cloth
 	std::vector<glm::vec3> normsIntermediate;
 	
 	void UpdateGeometry();
+	void CalcTensions();
+	void ApplyForces();
+	void ApplyWorldForces();
+	void CalcDeformationRates();
+	void ResolveSuperElongations();
 
 public:
 	Cloth() = delete;
