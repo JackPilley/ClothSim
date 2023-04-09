@@ -23,9 +23,11 @@ struct Particle
 	double mass;
 
 	bool fixed;
+	bool adjusted;
 
 	void Move(double dt)
 	{
+		adjusted = false;
 		[[unlikely]]if (fixed) return;
 
 		previousPosition = position;

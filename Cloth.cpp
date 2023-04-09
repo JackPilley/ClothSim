@@ -26,7 +26,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		{
 			double xPos = width * static_cast<double>(x + 0.5) / static_cast<double>(xResolution) - width/2;
 			double yPos = height * static_cast<double>(y + 0.5) / static_cast<double>(yResolution) - height/2;
-			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 1, false);
+			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 0.1, false);
 
 			vertices.emplace_back(glm::vec3{0.f}, glm::vec3{0.f, 0.f, 1.f});
 		}
@@ -193,6 +193,14 @@ void Cloth::UpdateGeometry()
 	glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), &vertices.front());
 }
 
+void Cloth::ResetForces()
+{
+	for (auto& particle : particles)
+	{
+		particle.force = glm::dvec3{ 0 };
+	}
+}
+
 void Cloth::CalcTensions()
 {
 	for (auto& spring : structuralSprings)
@@ -239,7 +247,7 @@ void Cloth::ApplyWorldForces()
 		//Gravity
 		particle.force += glm::dvec3(0, -9.8, 0) * particle.mass;
 		//Drag
-		particle.force += -0.1 * particle.velocity;
+		//particle.force += -0.05 * particle.velocity;
 		//Wind
 		particle.force += glm::dot(particle.normal, (wind - particle.velocity)) * particle.normal;
 
@@ -275,15 +283,17 @@ void Cloth::ResolveSuperElongations()
 
 	for (auto& spring : shearSprings)
 	{
-		//spring.ResolveSuperElongation();
+		spring.ResolveSuperElongation();
 	}
 }
 
 void Cloth::Step(double dt)
 {
+	ResetForces();
+
 	CalcTensions();
 
-	ApplyForces();
+	//ApplyForces();
 
 	ApplyWorldForces();
 
@@ -294,9 +304,9 @@ void Cloth::Step(double dt)
 
 	CalcDeformationRates();
 
-	std::sort(structuralSprings.begin(), structuralSprings.end(), [](Spring& a, Spring& b)->bool{return a.deformationRate > b.deformationRate;});
+	//std::sort(structuralSprings.begin(), structuralSprings.end(), [](Spring& a, Spring& b)->bool{return a.deformationRate > b.deformationRate;});
 
-	ResolveSuperElongations();
+	//ResolveSuperElongations();
 }
 
 void Cloth::SetParticlePosition(size_t x, size_t y, glm::dvec3 position)
@@ -322,6 +332,6 @@ void Cloth::Draw()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	//glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
-	glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(vertices.size()));
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+	//glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(vertices.size()));
 }

@@ -29,6 +29,7 @@ class Cloth
 	std::vector<glm::vec3> normsIntermediate;
 	
 	void UpdateGeometry();
+	void ResetForces();
 	void CalcTensions();
 	void ApplyForces();
 	void ApplyWorldForces();

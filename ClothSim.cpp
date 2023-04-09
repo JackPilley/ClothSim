@@ -73,13 +73,13 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	Cloth cloth(5.0, 5.0, 8, 8, 1);
+	Cloth cloth(5.0, 5.0, 17, 17, 1);
 	//for (int i = 0; i < 17; i++)
 	//{
 	//	cloth.SetParticleFixed(0, i, true);
 	//}
-	cloth.SetParticleFixed(0, 7, true);
-	cloth.SetParticleFixed(7, 7, true);
+	cloth.SetParticleFixed(0, 16, true);
+	cloth.SetParticleFixed(16, 16, true);
 
 	Shader shader{};
 	shader.Use();
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 
 	SDL_Event e;
 	bool quit = false;
-	double time = 0.016;
+	double time = 0.0167;
 	while (!quit)
 	{
 		high_resolution_clock::time_point start = high_resolution_clock::now();
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
 		SDL_GL_SwapWindow(window);
 
 		duration<double> timeSpan = duration_cast<duration<double>>(end - start);
-		//std::cout << timeSpan.count() * 1000 << "\n";
+		std::cout << timeSpan.count() * 1000 << "\n";
 	}
 
 	SDL_GL_DeleteContext(glContext);
