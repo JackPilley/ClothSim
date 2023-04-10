@@ -73,13 +73,16 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	Cloth cloth(5.0, 5.0, 17, 17, 1);
-	//for (int i = 0; i < 17; i++)
+	int clothRes = 17;
+
+	Cloth cloth(5.0, 5.0, clothRes, clothRes, 1);
+	//for (int i = 0; i < clothRes; i++)
 	//{
 	//	cloth.SetParticleFixed(0, i, true);
 	//}
-	cloth.SetParticleFixed(0, 16, true);
-	cloth.SetParticleFixed(16, 16, true);
+	cloth.SetParticleFixed(0, clothRes-1, true);
+	//cloth.SetParticleFixed(0, clothRes/2, true);
+	cloth.SetParticleFixed(0, 0, true);
 
 	Shader shader{};
 	shader.Use();
@@ -105,6 +108,11 @@ int main(int argc, char* argv[])
 		{
 			if (e.type == SDL_QUIT)
 				quit = true;
+			if (e.type == SDL_KEYDOWN)
+			{
+				if (e.key.keysym.sym == SDLK_SPACE)
+					cloth.ToggleElongationResolution();
+			}
 		}
 
 		glClearColor(0.0, 0.0, 0.0, 1.0);

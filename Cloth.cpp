@@ -26,7 +26,7 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		{
 			double xPos = width * static_cast<double>(x + 0.5) / static_cast<double>(xResolution) - width/2;
 			double yPos = height * static_cast<double>(y + 0.5) / static_cast<double>(yResolution) - height/2;
-			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 0.1, false);
+			particles.emplace_back(glm::dvec3{ xPos, yPos, -5.0 }, 0.02, false);
 
 			vertices.emplace_back(glm::vec3{0.f}, glm::vec3{0.f, 0.f, 1.f});
 		}
@@ -72,9 +72,9 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_STATIC_DRAW);
 
-	double structuralStiffness = 50.0;
-	double shearStiffness = 20.0;
-	double flexionStiffness = 20.0;
+	double structuralStiffness = 10.0;
+	double shearStiffness = 10.0;
+	double flexionStiffness = 5.0;
 
 	//Create horizontal structural springs
 	for (size_t y = 0; y < yResolution; ++y)
@@ -239,7 +239,7 @@ void Cloth::ApplyForces()
 
 void Cloth::ApplyWorldForces()
 {
-	glm::dvec3 wind{ 0.0, 0.0, 0.0 };
+	glm::dvec3 wind{ 2, 0.1, -0.4 };
 
 	// World forces (gravity, wind, air resistance)
 	for (auto& particle : particles)
@@ -247,7 +247,7 @@ void Cloth::ApplyWorldForces()
 		//Gravity
 		particle.force += glm::dvec3(0, -9.8, 0) * particle.mass;
 		//Drag
-		//particle.force += -0.05 * particle.velocity;
+		particle.force += -0.1 * particle.velocity;
 		//Wind
 		particle.force += glm::dot(particle.normal, (wind - particle.velocity)) * particle.normal;
 
@@ -257,20 +257,7 @@ void Cloth::ApplyWorldForces()
 		double x = ((uint64_t(seed) ^ 18446744073709551557) % 1000) / 500.0 - 1.0;
 		double y = ((uint64_t(seed) ^ 18446744073709551557) % 2000) / 1000.0 - 1.0;
 		double z = ((uint64_t(seed) ^ 18446744073709551557) % 3000) / 1500.0 - 1.0;
-		particle.force += glm::dvec3{ x, y, z } / 20.0;
-	}
-}
-
-void Cloth::CalcDeformationRates()
-{
-	for (auto& spring : structuralSprings)
-	{
-		spring.CalcDeformationRate();
-	}
-
-	for (auto& spring : shearSprings)
-	{
-		spring.CalcDeformationRate();
+		particle.force += glm::dvec3{ x, y, z } / 10.0;
 	}
 }
 
@@ -293,7 +280,7 @@ void Cloth::Step(double dt)
 
 	CalcTensions();
 
-	//ApplyForces();
+	ApplyForces();
 
 	ApplyWorldForces();
 
@@ -302,11 +289,25 @@ void Cloth::Step(double dt)
 		particle.Move(dt);
 	}
 
-	CalcDeformationRates();
+	//for (auto& spring : structuralSprings)
+	//{
+	//	spring.CalcDeformationRate();
+	//}
+	//
+	//for (auto& spring : shearSprings)
+	//{
+	//	spring.CalcDeformationRate();
+	//}
+	//
+	//std::sort(structuralSprings.begin(), structuralSprings.end(), [](Spring& a, Spring& b)->bool {return a.deformationRate > b.deformationRate; });
+	//std::sort(shearSprings.begin(), shearSprings.end(), [](Spring& a, Spring& b)->bool {return a.deformationRate > b.deformationRate; });
+	if(resolveSuperElongation)
+		ResolveSuperElongations();
 
-	//std::sort(structuralSprings.begin(), structuralSprings.end(), [](Spring& a, Spring& b)->bool{return a.deformationRate > b.deformationRate;});
-
-	//ResolveSuperElongations();
+	for (auto& particle : particles)
+	{
+		particle.CalcActualVelocity(dt);
+	}
 }
 
 void Cloth::SetParticlePosition(size_t x, size_t y, glm::dvec3 position)

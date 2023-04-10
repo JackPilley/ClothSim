@@ -33,8 +33,9 @@ class Cloth
 	void CalcTensions();
 	void ApplyForces();
 	void ApplyWorldForces();
-	void CalcDeformationRates();
 	void ResolveSuperElongations();
+
+	bool resolveSuperElongation = true;
 
 public:
 	Cloth() = delete;
@@ -42,6 +43,8 @@ public:
 	void Step(double dt);
 	void SetParticlePosition(size_t x, size_t y, glm::dvec3 position);
 	void SetParticleFixed(size_t x, size_t y, bool fixed);
+
+	void ToggleElongationResolution() { resolveSuperElongation = !resolveSuperElongation; };
 
 	void Draw();
 };

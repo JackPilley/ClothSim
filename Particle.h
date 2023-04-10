@@ -23,16 +23,20 @@ struct Particle
 	double mass;
 
 	bool fixed;
-	bool adjusted;
 
 	void Move(double dt)
 	{
-		adjusted = false;
 		[[unlikely]]if (fixed) return;
 
 		previousPosition = position;
 
-		position = position * 2.0 - previousPosition + (force / mass) * (dt * dt);
-		velocity = (position - previousPosition) / (2*dt);
+		glm::dvec3 accel = force / mass;
+		velocity = velocity + accel * dt;
+		position = position + velocity * dt;
+	}
+
+	void CalcActualVelocity(double dt)
+	{
+		velocity = (position - previousPosition) / dt;
 	}
 };
