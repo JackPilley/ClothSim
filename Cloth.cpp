@@ -129,6 +129,9 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 
 	std::reverse(structuralSprings.begin(), structuralSprings.end());
 	std::reverse(shearSprings.begin(), shearSprings.end());
+
+	std::cout << "Particle Count: " << particles.size() << "\n";
+	std::cout << "Spring Count: " << (structuralSprings.size() + shearSprings.size() + flexionSprings.size()) << "\n";
 }
 
 void Cloth::UpdateGeometry()

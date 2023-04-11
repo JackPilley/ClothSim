@@ -31,7 +31,8 @@ struct Spring
 		glm::dvec3 dir = glm::normalize(A->position - B->position);
 
 		//Spring force
-		force = stiffness * (restLength - glm::length(A->position - B->position)) * dir;
+		//force = stiffness * (restLength - glm::length(A->position - B->position)) * dir;
+		force = stiffness * ((A->position - B->position) - restLength * dir);
 	}
 
 	void CalcDeformationRate()
@@ -41,8 +42,8 @@ struct Spring
 
 	void ApplyForce()
 	{
-		A->force += force;
-		B->force += -force;
+		A->force += -force;
+		B->force += force;
 	}
 
 	void ResolveSuperElongation()

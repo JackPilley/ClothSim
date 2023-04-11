@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 
-	int clothRes = 17;
+	int clothRes = 50;
 
 	Cloth cloth(5.0, 5.0, clothRes, clothRes, 1);
 	//for (int i = 0; i < clothRes; i++)
