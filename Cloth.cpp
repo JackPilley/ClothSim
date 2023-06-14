@@ -72,8 +72,8 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_STATIC_DRAW);
 
-	double structuralStiffness = 10.0;
-	double shearStiffness = 10.0;
+	double structuralStiffness = 35.0;
+	double shearStiffness = 35.0;
 	double flexionStiffness = 5.0;
 
 	//Create horizontal structural springs
@@ -304,8 +304,11 @@ void Cloth::Step(double dt)
 	//
 	//std::sort(structuralSprings.begin(), structuralSprings.end(), [](Spring& a, Spring& b)->bool {return a.deformationRate > b.deformationRate; });
 	//std::sort(shearSprings.begin(), shearSprings.end(), [](Spring& a, Spring& b)->bool {return a.deformationRate > b.deformationRate; });
-	if(resolveSuperElongation)
-		ResolveSuperElongations();
+	if (resolveSuperElongation)
+	{
+		for(int i = 0; i < 5 ; i++)
+			ResolveSuperElongations();
+	}
 
 	for (auto& particle : particles)
 	{
