@@ -1,5 +1,7 @@
 #include <iostream>
 #include <chrono>
+#include <array>
+#include <numeric>
 
 #include <glad/glad.h>
 
@@ -75,13 +77,8 @@ int main(int argc, char* argv[])
 
 	int clothRes = 20;
 
-	Cloth cloth(5.0, 5.0, clothRes, clothRes, 1);
-	//for (int i = 0; i < clothRes; i++)
-	//{
-	//	cloth.SetParticleFixed(0, i, true);
-	//}
+	Cloth cloth(5.0, 5.0, clothRes, clothRes);
 	cloth.SetParticleFixed(0, clothRes-1, true);
-	//cloth.SetParticleFixed(0, clothRes/2, true);
 	cloth.SetParticleFixed(0, 0, true);
 
 	Shader shader{};
@@ -97,6 +94,9 @@ int main(int argc, char* argv[])
 	shader.SetMVMatrix(transform, view);
 
 	using namespace std::chrono;
+
+	std::array<double, 60> timeSamples{};
+	size_t timeSampleIndex = 0;
 
 	SDL_Event e;
 	bool quit = false;
@@ -128,7 +128,15 @@ int main(int argc, char* argv[])
 		SDL_GL_SwapWindow(window);
 
 		duration<double> timeSpan = duration_cast<duration<double>>(end - start);
-		std::cout << timeSpan.count() * 1000 << "\n";
+		timeSamples[timeSampleIndex++] = timeSpan.count();
+		if (timeSampleIndex == timeSamples.size())
+		{			
+			std::cout << std::accumulate(timeSamples.begin(), timeSamples.end(), 0.0) / static_cast<double>(timeSamples.size()) * 1000.0 << "\n";
+
+			timeSampleIndex = 0;
+		}
+		
+		SDL_Delay(16);
 	}
 
 	SDL_GL_DeleteContext(glContext);

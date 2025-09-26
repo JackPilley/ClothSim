@@ -4,9 +4,14 @@
 #include <execution>
 #include <glm/geometric.hpp>
 
-Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack):
-	xResolution(xRes),
-	yResolution(yRes)
+Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes):
+	xResolution{xRes},
+	yResolution{yRes},
+	horizontalStructuralRestLength{0},
+	verticalStructuralRestLength{0},
+	shearRestLength{0},
+	horizontalFlexionRestLength{0},
+	verticalFlexionRestLength{0}
 {
 	//We need this to be true, and it can be false if certain preprocessor options are set
 	static_assert(sizeof(glm::vec3) == sizeof(float) * 3);
@@ -72,10 +77,13 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices.front(), GL_STATIC_DRAW);
 
-	double structuralStiffness = 35.0;
-	double shearStiffness = 35.0;
-	double flexionStiffness = 5.0;
+	horizontalStructuralRestLength = width / (xResolution);
+	verticalStructuralRestLength = height / (yResolution);
+	shearRestLength = glm::distance(particles[0].position, particles[1 + xResolution].position);
+	horizontalFlexionRestLength = width / (xResolution) * 2;
+	verticalFlexionRestLength = height / (yResolution) * 2;
 
+#ifndef NO_STORED_SPRINGS
 	//Create horizontal structural springs
 	for (size_t y = 0; y < yResolution; ++y)
 	{
@@ -93,7 +101,6 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		}
 	}
 	//Create UL->DR shear springs
-	double shearRestLength = glm::distance(particles[0].position, particles[1 + xResolution].position);
 	for (size_t y = 0; y < yResolution - 1; y++)
 	{
 		for (size_t x = 0; x < xResolution - 1; x++)
@@ -110,28 +117,25 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes, double slack
 		}
 	}
 	//Create horizontal flexion springs
-	double flexionLength = width / (xResolution) * 2;
 	for (size_t y = 0;  y < yResolution; y++)
 	{
 		for (size_t x = 0; x < xResolution - 2; x++)
 		{
-			flexionSprings.emplace_back(particles[x + y * xResolution], particles[x + 2 + y * xResolution], flexionLength, flexionStiffness);
+			flexionSprings.emplace_back(particles[x + y * xResolution], particles[x + 2 + y * xResolution], horizontalFlexionRestLength, flexionStiffness);
 		}
 	}
-	flexionLength = height / (yResolution) * 2;
+	//Create vertical flexion springs
 	for (size_t x = 0; x < xResolution; x++)
 	{
 		for (size_t y = 0; y < yResolution - 2; y++)
 		{
-			flexionSprings.emplace_back(particles[x + y * xResolution], particles[x + (y + 2) * xResolution], flexionLength, flexionStiffness);
+			flexionSprings.emplace_back(particles[x + y * xResolution], particles[x + (y + 2) * xResolution], verticalFlexionRestLength, flexionStiffness);
 		}
 	}
 
-	std::reverse(structuralSprings.begin(), structuralSprings.end());
-	std::reverse(shearSprings.begin(), shearSprings.end());
-
-	std::cout << "Particle Count: " << particles.size() << "\n";
 	std::cout << "Spring Count: " << (structuralSprings.size() + shearSprings.size() + flexionSprings.size()) << "\n";
+#endif
+	std::cout << "Particle Count: " << particles.size() << "\n";
 }
 
 void Cloth::UpdateGeometry()
@@ -206,6 +210,7 @@ void Cloth::ResetForces()
 
 void Cloth::CalcTensions()
 {
+#ifndef NO_STORED_SPRINGS
 	for (auto& spring : structuralSprings)
 	{
 		spring.CalcTension();
@@ -220,10 +225,73 @@ void Cloth::CalcTensions()
 	{
 		spring.CalcTension();
 	}
+#endif
 }
 
 void Cloth::ApplyForces()
 {
+#ifdef NO_STORED_SPRINGS
+	// Calc tension and apply forces for horizontal structural springs
+	for (size_t y = 0; y < yResolution; ++y)
+	{
+		for (size_t x = 0; x < xResolution - 1; ++x)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 1 + y * xResolution];
+			Spring::CalcAndApplyForce(a, b, horizontalStructuralRestLength, structuralStiffness);
+		}
+	}
+	// Calc tension and apply forces for vertical structural springs
+	for (size_t x = 0; x < xResolution; ++x)
+	{
+		for (size_t y = 0; y < yResolution - 1; ++y)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + (y + 1) * xResolution];
+			Spring::CalcAndApplyForce(a, b, verticalStructuralRestLength, structuralStiffness);
+		}
+	}
+	// Calc tension and apply forces for UL -> DR shear springs
+	for (size_t y = 0; y < yResolution - 1; y++)
+	{
+		for (size_t x = 0; x < xResolution - 1; x++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 1 + (y + 1) * xResolution];
+			Spring::CalcAndApplyForce(a, b, shearRestLength, shearStiffness);
+		}
+	}
+	// Calc tension and apply forces for DL -> UR shear springs
+	for (size_t y = 1; y < yResolution; y++)
+	{
+		for (size_t x = 0; x < xResolution - 1; x++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 1 + (y - 1) * xResolution];
+			Spring::CalcAndApplyForce(a, b, shearRestLength, shearStiffness);
+		}
+	}
+	// Calc tension and apply forces for horizontal flexion springs
+	for (size_t y = 0; y < yResolution; y++)
+	{
+		for (size_t x = 0; x < xResolution - 2; x++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 2 + y * xResolution];
+			Spring::CalcAndApplyForce(a, b, horizontalFlexionRestLength, flexionStiffness);
+		}
+	}
+	// Calc tension and apply forces for vertical flexion springs
+	for (size_t x = 0; x < xResolution; x++)
+	{
+		for (size_t y = 0; y < yResolution - 2; y++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + (y + 2) * xResolution];
+			Spring::CalcAndApplyForce(a, b, verticalFlexionRestLength, flexionStiffness);
+		}
+	}
+#else
 	for (auto& spring : structuralSprings)
 	{
 		spring.ApplyForce();
@@ -238,6 +306,7 @@ void Cloth::ApplyForces()
 	{
 		spring.ApplyForce();
 	}
+#endif
 }
 
 void Cloth::ApplyWorldForces()
@@ -266,6 +335,68 @@ void Cloth::ApplyWorldForces()
 
 void Cloth::ResolveSuperElongations()
 {
+#ifdef NO_STORED_SPRINGS
+	// Resolve super elongation for horizontal structural springs
+	for (size_t y = 0; y < yResolution; ++y)
+	{
+		for (size_t x = 0; x < xResolution - 1; ++x)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 1 + y * xResolution];
+			Spring::ResolveSuperElongation(a, b, horizontalStructuralRestLength);
+		}
+	}
+	// Resolve super elongation for vertical structural springs
+	for (size_t x = 0; x < xResolution; ++x)
+	{
+		for (size_t y = 0; y < yResolution - 1; ++y)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + (y + 1) * xResolution];
+			Spring::ResolveSuperElongation(a, b, verticalStructuralRestLength);
+		}
+	}
+	// Resolve super elongation for UL -> DR shear springs
+	for (size_t y = 0; y < yResolution - 1; y++)
+	{
+		for (size_t x = 0; x < xResolution - 1; x++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 1 + (y + 1) * xResolution];
+			Spring::ResolveSuperElongation(a, b, shearRestLength);
+		}
+	}
+	// Resolve super elongation for DL -> UR shear springs
+	for (size_t y = 1; y < yResolution; y++)
+	{
+		for (size_t x = 0; x < xResolution - 1; x++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 1 + (y - 1) * xResolution];
+			Spring::ResolveSuperElongation(a, b, shearRestLength);
+		}
+	}
+	// Resolve super elongation for horizontal flexion springs
+	for (size_t y = 0; y < yResolution; y++)
+	{
+		for (size_t x = 0; x < xResolution - 2; x++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + 2 + y * xResolution];
+			Spring::ResolveSuperElongation(a, b, horizontalFlexionRestLength);
+		}
+	}
+	// Resolve super elongation for vertical flexion springs
+	for (size_t x = 0; x < xResolution; x++)
+	{
+		for (size_t y = 0; y < yResolution - 2; y++)
+		{
+			Particle& a = particles[x + y * xResolution];
+			Particle& b = particles[x + (y + 2) * xResolution];
+			Spring::ResolveSuperElongation(a, b, verticalFlexionRestLength);
+		}
+	}
+#else
 	for (auto& spring : structuralSprings)
 	{
 		spring.ResolveSuperElongation();
@@ -275,6 +406,7 @@ void Cloth::ResolveSuperElongations()
 	{
 		spring.ResolveSuperElongation();
 	}
+#endif
 }
 
 void Cloth::Step(double dt)
@@ -292,18 +424,6 @@ void Cloth::Step(double dt)
 		particle.Move(dt);
 	}
 
-	//for (auto& spring : structuralSprings)
-	//{
-	//	spring.CalcDeformationRate();
-	//}
-	//
-	//for (auto& spring : shearSprings)
-	//{
-	//	spring.CalcDeformationRate();
-	//}
-	//
-	//std::sort(structuralSprings.begin(), structuralSprings.end(), [](Spring& a, Spring& b)->bool {return a.deformationRate > b.deformationRate; });
-	//std::sort(shearSprings.begin(), shearSprings.end(), [](Spring& a, Spring& b)->bool {return a.deformationRate > b.deformationRate; });
 	if (resolveSuperElongation)
 	{
 		for(int i = 0; i < 5 ; i++)
