@@ -144,5 +144,5 @@ int main(int argc, char* argv[])
 	IMG_Quit();
 	SDL_Quit();
 
-    return 0;
+	return 0;
 }
