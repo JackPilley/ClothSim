@@ -1,6 +1,7 @@
 #include "Cloth.h"
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 #include <execution>
 #include <glm/geometric.hpp>
 
@@ -61,11 +62,16 @@ Cloth::Cloth(double width, double height, GLuint xRes, GLuint yRes):
 		}
 	}
 
+#ifdef VERTEX_BASED_NORMALS
+	vertexIDs.resize(vertices.size());
+	std::iota(vertexIDs.begin(), vertexIDs.end(), 0);
+#else
 	for (size_t i = 0; i < indices.size(); i += 3)
 	{
 		faceParRange.push_back(i);
 		normsIntermediate.push_back(glm::vec3{ 0 });
 	}
+#endif
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -147,6 +153,45 @@ void Cloth::UpdateGeometry()
 		vertices[i++].pos = glm::vec3{ particle.position };
 	}
 
+#ifdef VERTEX_BASED_NORMALS
+	
+	/* Attempting to run this in parallel hurt performance. It might have helped with a much higher resolution cloth
+	std::for_each(std::execution::par, vertexIDs.begin(), vertexIDs.end(), [this](size_t& i)
+	{
+		const size_t x = i % xResolution;
+		const size_t y = i / xResolution;
+
+		const size_t aboveIndex = y == 0 ? i : i - xResolution;
+		const size_t belowIndex = y + 1 >= yResolution ? i : i + xResolution;
+		const size_t leftIndex = x == 0 ? i : i - 1;
+		const size_t rightIndex = x + 1 >= xResolution ? i : i + 1;
+
+		glm::vec3 vecA = particles[rightIndex].position - particles[leftIndex].position;
+		glm::vec3 vecB = particles[belowIndex].position - particles[aboveIndex].position;
+		glm::vec3 normal = glm::normalize(glm::cross(vecA, vecB));
+
+		vertices[i].norm = normal;
+		particles[i].normal = normal;
+	}); */
+
+	for (size_t i : vertexIDs)
+	{
+		const size_t x = i % xResolution;
+		const size_t y = i / xResolution;
+
+		const size_t aboveIndex = y == 0 ? i : i - xResolution;
+		const size_t belowIndex = y + 1 >= yResolution ? i : i + xResolution;
+		const size_t leftIndex = x == 0 ? i : i - 1;
+		const size_t rightIndex = x + 1 >= xResolution ? i : i + 1;
+
+		glm::vec3 vecA = particles[rightIndex].position - particles[leftIndex].position;
+		glm::vec3 vecB = particles[belowIndex].position - particles[aboveIndex].position;
+		glm::vec3 normal = glm::normalize(glm::cross(vecA, vecB));
+
+		vertices[i].norm = normal;
+		particles[i].normal = normal;
+	}
+#else
 	//Reset normals
 	for (auto& norm : normsIntermediate)
 	{
@@ -195,6 +240,7 @@ void Cloth::UpdateGeometry()
 	{
 		particles[i].normal = vertices[i].norm;
 	}
+#endif
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), &vertices.front());

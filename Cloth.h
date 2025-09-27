@@ -7,6 +7,7 @@
 #include "Vertex.h"
 
 //#define NO_STORED_SPRINGS
+#define VERTEX_BASED_NORMALS
 
 class Cloth
 {
@@ -37,10 +38,14 @@ class Cloth
 	GLuint vbo;
 	GLuint ebo;
 
+#ifdef VERTEX_BASED_NORMALS
+	std::vector<size_t> vertexIDs;
+#else
 	//Indices used for parallel normal calculation
 	std::vector<size_t> faceParRange;
 	//Intermediate storage for normal generation
 	std::vector<glm::vec3> normsIntermediate;
+#endif
 	
 	void UpdateGeometry();
 	void ResetForces();
